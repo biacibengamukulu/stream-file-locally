@@ -1,7 +1,10 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/biacibengamukulu/stream-file-locally/internal/domain/filesystem"
 	"github.com/gofiber/fiber/v2"
@@ -10,6 +13,8 @@ import (
 type FilesystemController interface {
 	Upload(h *fiber.Ctx) error
 	Get(h *fiber.Ctx) error
+	Stream(h *fiber.Ctx) error
+	Delete(h *fiber.Ctx) error
 }
 
 type FilesystemControllerImpl struct {
@@ -45,8 +50,57 @@ func (c *FilesystemControllerImpl) Get(h *fiber.Ctx) error {
 
 	data, err := c.svc.Get(fileId)
 	if err != nil {
+		if errors.Is(err, filesystem.ErrNotFound) {
+			return h.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "file_not_found"})
+		}
 		return h.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return h.JSON(fiber.Map{"data": data})
+}
+
+func (c *FilesystemControllerImpl) Stream(h *fiber.Ctx) error {
+	fileID := h.Params("id")
+	if fileID == "" {
+		return h.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "file_id_required"})
+	}
+
+	file, err := c.svc.Stream(fileID)
+	if err != nil {
+		if errors.Is(err, filesystem.ErrNotFound) {
+			return h.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "file_not_found"})
+		}
+		return h.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	h.Set(fiber.HeaderContentType, file.ContentType)
+	h.Set(fiber.HeaderContentLength, strconv.FormatInt(int64(len(file.Content)), 10))
+	h.Set(fiber.HeaderContentDisposition, `inline; filename="`+safeHeaderFilename(file.Name)+`"`)
+	return h.Send(file.Content)
+}
+
+func (c *FilesystemControllerImpl) Delete(h *fiber.Ctx) error {
+	fileID := h.Params("id")
+	if fileID == "" {
+		return h.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "file_id_required"})
+	}
+
+	if err := c.svc.Delete(fileID); err != nil {
+		if errors.Is(err, filesystem.ErrNotFound) {
+			return h.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "file_not_found"})
+		}
+		return h.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return h.SendStatus(fiber.StatusNoContent)
+}
+
+func safeHeaderFilename(name string) string {
+	name = strings.ReplaceAll(name, `"`, "")
+	name = strings.ReplaceAll(name, "\r", "")
+	name = strings.ReplaceAll(name, "\n", "")
+	if strings.TrimSpace(name) == "" {
+		return "download"
+	}
+	return name
 }

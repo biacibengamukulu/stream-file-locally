@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"enterprise-delivery-platform/shared/cassandra"
+	"github.com/biacibengamukulu/stream-file-locally/sharded/cassandra"
 )
 
 // EnsureKeyspace creates the keyspace if it doesn't exist yet.

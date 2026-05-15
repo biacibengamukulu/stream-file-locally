@@ -1,0 +1,11 @@
+services:
+  stream-file-locally:
+    image: 010309/stream-file-locally:latest
+    container_name: stream-file-locally
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${HOST_HTTP_PORT:-18211}:${HTTP_PORT:-8080}"
+    volumes:
+      - "${HOST_STORAGE_PATH:-./data}:${DISK_STORAGE_PATH:-/data/stream-file-locally}"

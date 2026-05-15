@@ -1,0 +1,120 @@
+openapi: 3.0.3
+info:
+  title: Stream File Locally API
+  version: 1.0.0
+servers:
+  - url: https://cloudcalls.easipath.com/stream-file-locally
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service is healthy
+  /api/v1/files/upload:
+    post:
+      summary: Upload a base64 encoded file
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadRequest"
+      responses:
+        "201":
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileResponse"
+        "400":
+          description: Invalid request
+        "500":
+          description: Upload failed
+  /api/v1/files/{id}:
+    get:
+      summary: Get file metadata
+      parameters:
+        - $ref: "#/components/parameters/FileID"
+      responses:
+        "200":
+          description: File metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileResponse"
+        "404":
+          description: File not found
+    delete:
+      summary: Delete a stored file
+      parameters:
+        - $ref: "#/components/parameters/FileID"
+      responses:
+        "204":
+          description: File deleted
+        "404":
+          description: File not found
+  /api/v1/files/{id}/stream:
+    get:
+      summary: Stream file bytes
+      parameters:
+        - $ref: "#/components/parameters/FileID"
+      responses:
+        "200":
+          description: File bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: File not found
+components:
+  parameters:
+    FileID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    UploadRequest:
+      type: object
+      required:
+        - base64_content
+      properties:
+        name:
+          type: string
+          example: hello.txt
+        content_type:
+          type: string
+          example: text/plain
+        base64_content:
+          type: string
+          example: SGVsbG8sIHdvcmxkIQ==
+    FileResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/File"
+    File:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        content_type:
+          type: string
+        url:
+          type: string
+        extension:
+          type: string
+        size:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time

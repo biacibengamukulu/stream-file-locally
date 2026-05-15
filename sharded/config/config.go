@@ -10,10 +10,16 @@ import (
 type Config struct {
 	ServiceName string
 
-	HTTPPort string
+	HTTPPort      string
+	RoutePrefix   string
+	PublicBaseURL string
 
-	CassandraHosts    string
-	CassandraKeyspace string
+	CassandraHosts             string
+	CassandraKeyspace          string
+	CassandraReplicationFactor string
+
+	StorageDriver   string
+	DiskStoragePath string
 
 	KafkaBrokers string
 	KafkaGroupID string
@@ -44,14 +50,19 @@ func Load(serviceName string) Config {
 	//  - delivery   => biatechlibs_stream
 
 	return Config{
-		ServiceName: serviceName,
-		HTTPPort:    Getenv("HTTP_PORT", "8080"),
+		ServiceName:   serviceName,
+		HTTPPort:      Getenv("HTTP_PORT", "8080"),
+		RoutePrefix:   Getenv("ROUTE_PREFIX", "/stream-file-locally"),
+		PublicBaseURL: Getenv("PUBLIC_BASE_URL", ""),
 
-		CassandraHosts:    Getenv("CASSANDRA_HOSTS", constants.CASSANDRA_HOSTS),
-		CassandraKeyspace: Getenv("CASSANDRA_KEYSPACE", defaultKeyspace),
+		CassandraHosts:             Getenv("CASSANDRA_HOSTS", constants.CASSANDRA_HOSTS),
+		CassandraKeyspace:          Getenv("CASSANDRA_KEYSPACE", defaultKeyspace),
+		CassandraReplicationFactor: Getenv("CASSANDRA_REPLICATION_FACTOR", "1"),
 
-		KafkaBrokers:        Getenv("KAFKA_BROKERS", constants.KAFKA_HOST),
-		KafkaGroupID:        Getenv("KAFKA_GROUP_ID", svc+"-group"),
-		DropboxRefreshToken: Getenv("DROPBOX_REFRESH_TOKEN", constants.DROPBOX_REFRESH_TOKEN),
+		StorageDriver:   Getenv("STORAGE_DRIVER", "disk"),
+		DiskStoragePath: Getenv("DISK_STORAGE_PATH", "/data/stream-file-locally"),
+
+		KafkaBrokers: Getenv("KAFKA_BROKERS", constants.KAFKA_HOST),
+		KafkaGroupID: Getenv("KAFKA_GROUP_ID", svc+"-group"),
 	}
 }

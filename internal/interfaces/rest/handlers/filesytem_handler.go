@@ -17,6 +17,9 @@ func NewFileSystemHandler(svc filesystem.FileService) *FileSystemHandler {
 }
 func (h *FileSystemHandler) Register(router fiber.Router) {
 	controller := h.controller
-	router.Post("/upload", controller.Upload)
-	router.Get("/:id", controller.Get)
+	files := router.Group("/files")
+	files.Post("/upload", controller.Upload)
+	files.Get("/:id", controller.Get)
+	files.Get("/:id/stream", controller.Stream)
+	files.Delete("/:id", controller.Delete)
 }
